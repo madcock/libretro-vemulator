@@ -1,0 +1,16 @@
+SOURCES_C   :=
+SOURCES_CXX := \
+					$(CORE_DIR)/audio.cpp \
+					$(CORE_DIR)/basetimer.cpp \
+					$(CORE_DIR)/bitwisemath.cpp \
+					$(CORE_DIR)/cpu.cpp \
+					$(CORE_DIR)/flash.cpp \
+					$(CORE_DIR)/flashfile.cpp \
+					$(CORE_DIR)/interrupts.cpp \
+					$(CORE_DIR)/main.cpp \
+					$(CORE_DIR)/ram.cpp \
+					$(CORE_DIR)/rom.cpp \
+					$(CORE_DIR)/t0.cpp \
+					$(CORE_DIR)/t1.cpp \
+					$(CORE_DIR)/video.cpp \
+					$(CORE_DIR)/vmu.cpp
