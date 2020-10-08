@@ -1,17 +1,15 @@
 LOCAL_PATH := $(call my-dir)
 
-CORE_DIR := $(LOCAL_PATH)/..
+CORE_DIR     := $(LOCAL_PATH)/..
+ROOT_DIR     := $(LOCAL_PATH)/..
+
+include $(ROOT_DIR)/Makefile.common
 
 include $(CLEAR_VARS)
-LOCAL_CFLAGS    :=
-
 LOCAL_MODULE    := retro
-
-include $(CORE_DIR)/Makefile.common
-
 LOCAL_SRC_FILES := $(SOURCES_C) $(SOURCES_CXX)
-LOCAL_CFLAGS    += -O3 -std=gnu++99 -ffast-math -funroll-loops
-LOCAL_LDFLAGS   := -Wl,-version-script=$(CORE_DIR)/libretro/link.T
+LOCAL_CFLAGS    := -O3 -std=gnu++99 -ffast-math -funroll-loops
+LOCAL_LDFLAGS   := -Wl,-version-script=$(CORE_DIR)/link.T
 
 ifeq ($(TARGET_ARCH),arm)
 LOCAL_CFLAGS += -DANDROID_ARM
