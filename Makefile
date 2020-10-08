@@ -100,9 +100,9 @@ else ifeq ($(platform), emscripten)
    SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
 else ifeq ($(platform), vita)
    TARGET := $(TARGET_NAME)_vita.a
-   CC = arm-vita-eabi-gcc
-   CXX = arm-vita-eabi-g++
-   AR = arm-vita-eabi-ar
+   CC ?= arm-vita-eabi-gcc
+   CXX ?= arm-vita-eabi-g++
+   AR ?= arm-vita-eabi-ar
    CFLAGS += -Wl,-q -Wall -O3
 	STATIC_LINKING = 1
 else
