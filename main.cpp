@@ -23,10 +23,13 @@ retro_environment_t environment_cb;
 retro_video_refresh_t video_cb;
 retro_audio_sample_t audio_cb;
 retro_audio_sample_batch_t audio_batch_cb;
-retro_input_poll_t inputPoll_cb;
-retro_input_state_t inputState_cb;
+retro_input_poll_t input_poll_cb;
+retro_input_state_t input_state_cb;
 
-struct retro_variable options[2];
+struct retro_variable options[2] = {
+   {"enable_flash_write", "Enable flash write (.bin, requires restart); enabled|disabled"},
+   { NULL, NULL }
+};
 
 VMU *vmu;
 uint16_t *frameBuffer;
@@ -35,10 +38,6 @@ byte *romData;
 RETRO_API void retro_set_environment(retro_environment_t env)
 {
    environment_cb = env;
-
-   //Set variables (Options)
-   options[0] = { "enable_flash_write", "Enable flash write (.bin, requires restart); enabled|disabled"};
-   options[1] = {NULL, NULL};
 
    env(RETRO_ENVIRONMENT_SET_VARIABLES, options);
 }
@@ -60,12 +59,12 @@ RETRO_API void retro_set_audio_sample_batch(retro_audio_sample_batch_t batch)
 
 RETRO_API void retro_set_input_poll(retro_input_poll_t ipoll)
 {
-	inputPoll_cb = ipoll;
+	input_poll_cb = ipoll;
 }
 
 RETRO_API void retro_set_input_state(retro_input_state_t istate)
 {
-	inputState_cb = istate;
+	input_state_cb = istate;
 }
 
 RETRO_API void retro_init(void)
@@ -114,7 +113,7 @@ RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
  
 void processInput()
 {
-   inputPoll_cb();
+   input_poll_cb();
 
    if(!vmu->cpu->P3_taken)
       return;	//Don't accept new input until previous is processed
@@ -126,7 +125,7 @@ void processInput()
    P3_reg = ~P3_reg;	//Active low
 
    //Up
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
    {
       P3_reg |= 1;
       pressFlag++;
@@ -134,7 +133,7 @@ void processInput()
    else P3_reg &= 0xFE;
 
    //Down
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
    {
       P3_reg |= 2;
       pressFlag++;
@@ -142,7 +141,7 @@ void processInput()
    else P3_reg &= 0xFD;
 
    //Left
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
    {
       P3_reg |= 4;
       pressFlag++;
@@ -150,7 +149,7 @@ void processInput()
    else P3_reg &= 0xFB;
 
    //Right
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
    {
       P3_reg |= 8;
       pressFlag++;
@@ -158,7 +157,7 @@ void processInput()
    else P3_reg &= 0xF7;
 
    //A
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
    {
       P3_reg |= 16;
       pressFlag++;
@@ -166,7 +165,7 @@ void processInput()
    else P3_reg &= 0xEF;
 
    //B
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B))
    {
       P3_reg |= 32;
       pressFlag++;
@@ -174,7 +173,7 @@ void processInput()
    else P3_reg &= 0xDF;
 
    //Start
-   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START))
+   if(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START))
    {
       //Clicking MODE without a BIOS causes hang
       //P3_reg |= 64;
