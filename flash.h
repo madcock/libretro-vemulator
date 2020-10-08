@@ -96,7 +96,7 @@ private:
     byte *FAT;
     byte *rootBlock;
     byte *data;
-    FILE *flashWriter = NULL;
+    FILE *flashWriter;
     char *romName;
     bool IsRealFlash;
     bool IsSaveEnabled;

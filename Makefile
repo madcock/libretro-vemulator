@@ -1,6 +1,9 @@
 STATIC_LINKING := 0
-AR             := ar
-CC			   := g++
+AR             ?= ar
+CC	       ?= gcc
+CXX	       ?= g++
+
+CORE_DIR     := .
 
 ifeq ($(platform),)
 platform = unix
@@ -77,11 +80,14 @@ endif
 
 	DEFINES := -DIOS
 	CC = CC -arch armv7 -isysroot $(IOSSDK)
+	CXX = CXX -arch armv7 -isysroot $(IOSSDK)
 ifeq ($(platform),ios9)
 CC     += -miphoneos-version-min=8.0
+CXX     += -miphoneos-version-min=8.0
 CFLAGS += -miphoneos-version-min=8.0
 else
 CC     += -miphoneos-version-min=5.0
+CXX     += -miphoneos-version-min=5.0
 CFLAGS += -miphoneos-version-min=5.0
 endif
 else ifneq (,$(findstring qnx,$(platform)))
@@ -94,12 +100,14 @@ else ifeq ($(platform), emscripten)
    SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
 else ifeq ($(platform), vita)
    TARGET := $(TARGET_NAME)_vita.a
-   CC = arm-vita-eabi-g++
+   CC = arm-vita-eabi-gcc
+   CXX = arm-vita-eabi-g++
    AR = arm-vita-eabi-ar
    CFLAGS += -Wl,-q -Wall -O3
 	STATIC_LINKING = 1
 else
-   CC = g++
+   CC ?= gcc
+   CXX ?= g++
    TARGET := $(TARGET_NAME)_libretro.dll
    SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=link.T -Wl,--no-undefined
 endif
@@ -112,26 +120,34 @@ else
    CFLAGS += -O3
 endif
 
-SRC := *.cpp
+include Makefile.common
+
+OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o)
 CFLAGS += -Wall -pedantic $(fpic)
 
 ifneq (,$(findstring qnx,$(platform)))
 CFLAGS += -Wc,-std=c++98
 else
-CFLAGS += -std=c++98
+CFLAGS += -std=gnu++98
 endif
 
-all:
+all: $(TARGET)
 
+$(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
-	$(AR) rcs ${TARGET} $(SRC)
+	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CC) $(CFLAGS) $(fpic) $(SHARED) $(SRC) $(LDFLAGS) -o ${TARGET}
+	$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
+
+%.o: %.cpp
+	$(CXX) $(CFLAGS) $(fpic) -c -o $@ $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(fpic) -c -o $@ $<
 
 clean:
-	rm -f *.so *.o *.a
-	rm -f -r libs obj
+	rm -f *.so *.o
 
 .PHONY: clean
 

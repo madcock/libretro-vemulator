@@ -137,7 +137,6 @@ private:
     int interruptLevel;
     int currentInterrupt;
     bool interruptsMasked;
-
     int instructionCount;
     
     VE_VMS_RAM *ram;

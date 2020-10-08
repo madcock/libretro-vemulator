@@ -174,40 +174,46 @@ void VE_VMS_FLASH::loadROM(byte *d, size_t buffSize, int romType, const char *fi
 ///Returns raw VMS data and its size
 size_t VE_VMS_FLASH::getROM(byte *out)
 {
+   int i, j, c;
 	//Loading userData (200 blocks, blocks are ordered descending)
-	for(int i = 0, c = 0; i < 200; ++i)
+	for(i = 0, c = 0; i < 200; ++i)
 	{
-		for(int j = 0; j < 512; j++){
-			out[(i*512) + j] = userData[c];
-			c++;
-		}
+		for(j = 0; j < 512; j++)
+      {
+         out[(i*512) + j] = userData[c];
+         c++;
+      }
 	}
 
 	//Loading directory (13 blocks)
-	for(int i = 253, c = 0; i >= 241; --i)
+	for(i = 253, c = 0; i >= 241; --i)
 	{
-		for(int j = 0; j < 512; j++){
+		for(j = 0; j < 512; j++)
+      {
 			out[(i*512) + j] = directory[c];
 			c++;
 		}
 	}
 
 	//Loading FAT and rootBlock
-	for(int j = 0; j < 512; j++) 
+	for(j = 0; j < 512; j++) 
 	{
 		out[(0x1FC00) + j] = FAT[j];  //0x1FC00 being 254 x 512
 
 		// for(int j = 0; j < 512; j++)
 		out[(0x1FE00) + j] = rootBlock[j];  //0x1FE00 being 255 x 512
 	}
+
+   return 0;
 }
 
 ///Returns data
 size_t VE_VMS_FLASH::getData(byte *out)
 {	
-	for(size_t i = 0; i < 0x20000; ++i, out[i] = data[i]);
-	
-    return 0x20000;
+   size_t i;
+   for(i = 0; i < 0x20000; ++i, out[i] = data[i]);
+
+   return 0x20000;
 }
 
 
@@ -233,7 +239,8 @@ byte VE_VMS_FLASH::getByte(size_t address)
 ///Returns byte at address (With banking)
 byte VE_VMS_FLASH::readByte(size_t address)
 {
-	if((ram->readByte(0x154) & 1) == 1) address += 0x10000;
+	if((ram->readByte(0x154) & 1) == 1)
+      address += 0x10000;
 
 	return data[address] & 0xFF;
 }

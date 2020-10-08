@@ -32,19 +32,15 @@ VMU *vmu;
 uint16_t *frameBuffer;
 byte *romData;
 
-
 RETRO_API void retro_set_environment(retro_environment_t env)
 {
-	environment_cb = env;
-	
-	//Set variables (Options)
-	options[0].key = "enable_flash_write"; 
-	options[0].value = "Enable flash write (.bin, requires restart); enabled|disabled";
-	
-	options[1].key = NULL;
-	options[1].value = NULL;
-	
-	env(RETRO_ENVIRONMENT_SET_VARIABLES, options);
+   environment_cb = env;
+
+   //Set variables (Options)
+   options[0] = { "enable_flash_write", "Enable flash write (.bin, requires restart); enabled|disabled"};
+   options[1] = {NULL, NULL};
+
+   env(RETRO_ENVIRONMENT_SET_VARIABLES, options);
 }
 
 RETRO_API void retro_set_video_refresh(retro_video_refresh_t vr)
@@ -118,84 +114,85 @@ RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
  
 void processInput()
 {
-	inputPoll_cb();
-	
-	if(!vmu->cpu->P3_taken) return;	//Don't accept new input until previous is processed
-	
-	byte P3_reg = vmu->ram->readByte_RAW(P3);
-	int pressFlag = 0;
-	byte P3_int = vmu->ram->readByte_RAW(P3INT);
-	
-	P3_reg = ~P3_reg;	//Active low
-	
-	//Up
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
-	{
-		P3_reg |= 1;
-		pressFlag++;
-	}
-	else P3_reg &= 0xFE;
-	
-	//Down
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
-	{
-		P3_reg |= 2;
-		pressFlag++;
-	}
-	else P3_reg &= 0xFD;
-	
-	//Left
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
-	{
-		P3_reg |= 4;
-		pressFlag++;
-	}
-	else P3_reg &= 0xFB;
-	
-	//Right
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
-	{
-		P3_reg |= 8;
-		pressFlag++;
-	}
-	else P3_reg &= 0xF7;
-	
-	//A
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
-	{
-		P3_reg |= 16;
-		pressFlag++;
-	}
-	else P3_reg &= 0xEF;
-	
-	//B
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B))
-	{
-		P3_reg |= 32;
-		pressFlag++;
-	}
-	else P3_reg &= 0xDF;
-	
-	//Start
-	if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START))
-	{
-		//Clicking MODE without a BIOS causes hang
-		//P3_reg |= 64;
-		//pressFlag++;
-	}
-	//else P3_reg &= 0xBF;
-	
-	P3_reg = ~P3_reg;
-	
-	vmu->ram->writeByte_RAW(P3, P3_reg);
-	
-	if(pressFlag)
-	{
-		vmu->ram->writeByte_RAW(P3INT, P3_int | 2);
-		vmu->intHandler->setP3();
-		vmu->cpu->P3_taken = false;
-	}
-	
+   inputPoll_cb();
+
+   if(!vmu->cpu->P3_taken)
+      return;	//Don't accept new input until previous is processed
+
+   byte P3_reg = vmu->ram->readByte_RAW(P3);
+   int pressFlag = 0;
+   byte P3_int = vmu->ram->readByte_RAW(P3INT);
+
+   P3_reg = ~P3_reg;	//Active low
+
+   //Up
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
+   {
+      P3_reg |= 1;
+      pressFlag++;
+   }
+   else P3_reg &= 0xFE;
+
+   //Down
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
+   {
+      P3_reg |= 2;
+      pressFlag++;
+   }
+   else P3_reg &= 0xFD;
+
+   //Left
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
+   {
+      P3_reg |= 4;
+      pressFlag++;
+   }
+   else P3_reg &= 0xFB;
+
+   //Right
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
+   {
+      P3_reg |= 8;
+      pressFlag++;
+   }
+   else P3_reg &= 0xF7;
+
+   //A
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
+   {
+      P3_reg |= 16;
+      pressFlag++;
+   }
+   else P3_reg &= 0xEF;
+
+   //B
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B))
+   {
+      P3_reg |= 32;
+      pressFlag++;
+   }
+   else P3_reg &= 0xDF;
+
+   //Start
+   if(inputState_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START))
+   {
+      //Clicking MODE without a BIOS causes hang
+      //P3_reg |= 64;
+      //pressFlag++;
+   }
+   //else P3_reg &= 0xBF;
+
+   P3_reg = ~P3_reg;
+
+   vmu->ram->writeByte_RAW(P3, P3_reg);
+
+   if(pressFlag)
+   {
+      vmu->ram->writeByte_RAW(P3INT, P3_int | 2);
+      vmu->intHandler->setP3();
+      vmu->cpu->P3_taken = false;
+   }
+
 }
 
 RETRO_API void retro_reset(void)
@@ -205,38 +202,30 @@ RETRO_API void retro_reset(void)
 
 RETRO_API void retro_run(void)
 {
+   unsigned i;
+   unsigned int cyclesPassed;
 	processInput();
 	
 	//Cycles passed since last screen refresh
-	size_t cyclesPassed = vmu->cpu->getCurrentFrequency() / FPS;
+	cyclesPassed = vmu->cpu->getCurrentFrequency() / FPS;
 	
-	for(size_t i = 0; i < cyclesPassed; i++)
+	for(i = 0; i < cyclesPassed; i++)
 		vmu->runCycle();
 
 	//Video
 	vmu->video->drawFrame(frameBuffer);
-	if(vmu->ram->readByte_RAW(MCR) & 8) video_cb(frameBuffer, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH * 2);
+	if(vmu->ram->readByte_RAW(MCR) & 8)
+      video_cb(frameBuffer, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH * 2);
 	
 	//Audio
 	vmu->audio->generateSignal(audio_cb);
 }
 
-RETRO_API size_t retro_serialize_size(void)
-{
-}
+RETRO_API size_t retro_serialize_size(void) { return 0; }
+RETRO_API bool retro_serialize(void *data, size_t size) {return false;}
+RETRO_API bool retro_unserialize(const void *data, size_t size) {return false;}
 
-
-RETRO_API bool retro_serialize(void *data, size_t size)
-{
-}
-
-RETRO_API bool retro_unserialize(const void *data, size_t size)
-{
-}
-
-RETRO_API void retro_cheat_reset(void)
-{
-}
+RETRO_API void retro_cheat_reset(void) { }
 
 RETRO_API void retro_cheat_set(unsigned index, bool enabled, const char *code)
 {
@@ -244,6 +233,7 @@ RETRO_API void retro_cheat_set(unsigned index, bool enabled, const char *code)
 
 RETRO_API bool retro_load_game(const struct retro_game_info *game)
 {
+   size_t i;
 	//Set environment variables
 	enum retro_pixel_format format = RETRO_PIXEL_FORMAT_RGB565;
 	environment_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &format);
@@ -256,7 +246,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info *game)
 	fseek(rom, 0 , SEEK_SET);
 
 	romData = (byte *)malloc(romSize);
-	for(size_t i = 0; i < romSize; i++)
+	for(i = 0; i < romSize; i++)
 		romData[i] = fgetc(rom);
 	
 	fclose(rom);
@@ -299,14 +289,6 @@ RETRO_API void retro_unload_game(void)
 	vmu->reset();
 }
 
-RETRO_API unsigned retro_get_region(void)
-{
-}
-
-RETRO_API void *retro_get_memory_data(unsigned id)
-{
-}
-
-RETRO_API size_t retro_get_memory_size(unsigned id)
-{
-}
+RETRO_API unsigned retro_get_region(void) { return RETRO_REGION_NTSC; }
+RETRO_API void *retro_get_memory_data(unsigned id) { return NULL; }
+RETRO_API size_t retro_get_memory_size(unsigned id) { return 0; }
