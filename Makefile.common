@@ -1,4 +1,5 @@
 SOURCES_C   :=
+
 SOURCES_CXX := \
 					$(CORE_DIR)/audio.cpp \
 					$(CORE_DIR)/basetimer.cpp \
