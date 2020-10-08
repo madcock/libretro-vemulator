@@ -131,20 +131,36 @@ else
 CFLAGS += -std=gnu++98
 endif
 
+OBJOUT   = -o 
+LINKOUT  = -o 
+
+ifneq (,$(findstring msvc,$(platform)))
+	OBJOUT = -Fo
+	LINKOUT = -out:
+ifeq ($(STATIC_LINKING),1)
+	LD ?= lib.exe
+	STATIC_LINKING=0
+else
+	LD = link.exe
+endif
+else
+	LD = $(CXX)
+endif
+
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS)
+	$(LD) $(fpic) $(SHARED) $(LINKOUT)$@ $(OBJECTS) $(LDFLAGS)
 endif
 
 %.o: %.cpp
-	$(CXX) $(CFLAGS) $(fpic) -c -o $@ $<
+	$(CXX) $(INCLUDES) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(fpic) -c -o $@ $<
+	$(CC) $(INCLUDES) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 clean:
 	rm -f *.so *.o
