@@ -92,8 +92,8 @@ ifeq ($(IOSSDK),)
 endif
 
 	DEFINES := -DIOS
-	CC = CC -arch armv7 -isysroot $(IOSSDK)
-	CXX = CXX -arch armv7 -isysroot $(IOSSDK)
+	CC = cc -arch armv7 -isysroot $(IOSSDK)
+	CXX = c++ -arch armv7 -isysroot $(IOSSDK)
 ifeq ($(platform),ios9)
 CC     += -miphoneos-version-min=8.0
 CXX     += -miphoneos-version-min=8.0
