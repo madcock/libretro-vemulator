@@ -97,7 +97,6 @@ private:
     byte *rootBlock;
     byte *data;
     FILE *flashWriter;
-    char *romName;
     bool IsRealFlash;
     bool IsSaveEnabled;
     

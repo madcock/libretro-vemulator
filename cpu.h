@@ -132,7 +132,6 @@ public:
     
 private:
     size_t PC; //This counts where we reached in instruction memory (Starting from first instruction executed)
-    int clock;   //In nanoseconds
     double frequency;
     int interruptLevel;
     int currentInterrupt;

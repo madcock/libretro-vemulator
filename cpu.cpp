@@ -685,7 +685,6 @@ void VE_VMS_CPU::performHLE(size_t entryAddress)
 		byte month = ram->readByte_RAW(0x19);
 		byte yearH = ram->readByte_RAW(0x17);
 		byte yearL = ram->readByte_RAW(0x18);
-		byte year = (yearH << 8) | yearL;
 		byte hour = ram->readByte_RAW(0x1B);
 		byte min = ram->readByte_RAW(0x1C);
 		byte sec = ram->readByte_RAW(0x1D);
@@ -2111,10 +2110,7 @@ int VE_VMS_CPU::processInstruction(bool dbg)
 	//LDC Flash
 	else if(opcode == 0x50)
 	{
-		byte ACC_data = ram->readByte_RAW(ACC);
 		size_t address = ram->readByte(TRL) | (ram->readByte(TRH) << 8);
-
-		//address += ACC_data;
 
 		byte data = flash->readByte(address);
 

@@ -29,27 +29,15 @@ else ifneq ($(findstring Darwin,$(shell uname -a)),)
 ifeq ($(shell uname -p),powerpc)
 	arch = ppc
 endif
+ifeq ($(shell uname -p),arm)
+	arch = arm
+endif
 else ifneq ($(findstring MINGW,$(shell uname -a)),)
 	system_platform = win
 endif
 
 TARGET_NAME := vemulator
 LIBM		= -lm
-
-ifeq ($(ARCHFLAGS),)
-ifeq ($(archs),ppc)
-   ARCHFLAGS = -arch ppc -arch ppc64
-else
-   ARCHFLAGS = -arch i386 -arch x86_64
-endif
-endif
-
-ifeq ($(platform), osx)
-ifndef ($(NOUNIVERSAL))
-   CFLAGS += $(ARCHFLAGS)
-   LFLAGS += $(ARCHFLAGS)
-endif
-endif
 
 ifeq ($(STATIC_LINKING), 1)
 EXT := a
@@ -69,6 +57,31 @@ else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
    SHARED := -dynamiclib
+
+
+ifeq ($(UNIVERSAL),1)
+ifeq ($(ARCHFLAGS),)
+   ARCHFLAGS = -arch i386 -arch x86_64
+ifeq ($(archs),arm)
+   ARCHFLAGS = -arch arm64
+endif
+ifeq ($(archs),ppc)
+   ARCHFLAGS = -arch ppc -arch ppc64
+endif
+endif
+
+   ifeq ($(CROSS_COMPILE),1)
+		TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+		CFLAGS   += $(TARGET_RULE)
+		CPPFLAGS += $(TARGET_RULE)
+		CXXFLAGS += $(TARGET_RULE)
+		LDFLAGS  += $(TARGET_RULE)
+   endif
+
+   CFLAGS += $(ARCHFLAGS)
+   LFLAGS += $(ARCHFLAGS)
+endif
+
 else ifneq (,$(findstring ios,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
 	fpic := -fPIC
