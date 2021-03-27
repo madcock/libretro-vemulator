@@ -5,6 +5,8 @@ CXX	       ?= g++
 
 CORE_DIR     := .
 
+CFLAGS       :=
+
 # platform
 ifeq ($(platform),)
 platform = unix
