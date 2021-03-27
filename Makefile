@@ -53,7 +53,7 @@ else ifeq ($(platform), linux-portable)
    fpic := -fPIC -nostdlib
    SHARED := -shared -Wl,--version-script=link.T
 	LIBM :=
-else ifneq (,$(findstring osx,$(platform)))
+else ifeq ($(platform), osx)
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
    SHARED := -dynamiclib
