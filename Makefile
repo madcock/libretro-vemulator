@@ -1,7 +1,4 @@
 STATIC_LINKING := 0
-AR             ?= ar
-CC	       ?= gcc
-CXX	       ?= g++
 
 CORE_DIR     := .
 
