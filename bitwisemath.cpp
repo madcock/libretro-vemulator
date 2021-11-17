@@ -187,7 +187,7 @@ byte toSigned8(byte op)
 {
 	if(op < -127)
 		return comp8(op);
-	else return op;
+	return op;
 }
 
 //Converts normal number to BCD

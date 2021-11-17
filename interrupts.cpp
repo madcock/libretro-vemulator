@@ -20,18 +20,18 @@
 
 VE_VMS_INTERRUPTS::VE_VMS_INTERRUPTS()
 {
-	Reset = 0;
-    INT0 = 0;
-    INT1 = 0;
-    INT2 = 0;
-    INT3 = 0;
-    T0HOV = 0;
-    T1HLOV = 0;
-    SIO0 = 0;
-    SIO1 = 0;
-    RFB = 0;
-    P3_data = 0;
-    P3_Taken = true;
+   Reset    = 0;
+   INT0     = 0;
+   INT1     = 0;
+   INT2     = 0;
+   INT3     = 0;
+   T0HOV    = 0;
+   T1HLOV   = 0;
+   SIO0     = 0;
+   SIO1     = 0;
+   RFB      = 0;
+   P3_data  = 0;
+   P3_Taken = true;
 }
 
 VE_VMS_INTERRUPTS::~VE_VMS_INTERRUPTS()

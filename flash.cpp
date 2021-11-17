@@ -20,10 +20,10 @@
 
 /* Forward declarations */
 extern "C" {
-RFILE* rfopen(const char *path, const char *mode);
-int rfclose(RFILE* stream);
-int64_t rfseek(RFILE* stream, int64_t offset, int origin);
-int rfputc(int character, RFILE * stream);
+   RFILE* rfopen(const char *path, const char *mode);
+   int rfclose(RFILE* stream);
+   int64_t rfseek(RFILE* stream, int64_t offset, int origin);
+   int rfputc(int character, RFILE * stream);
 }
 
 VE_VMS_FLASH::VE_VMS_FLASH(VE_VMS_RAM *_ram)
@@ -53,65 +53,65 @@ VE_VMS_FLASH::~VE_VMS_FLASH()
 //romType 2: DCI file
 void VE_VMS_FLASH::loadROM(byte *d, size_t buffSize, int romType, const char *fileName, bool enableSave)
 {
-   byte *romData = new byte[0x20000];
-
+   size_t i, i2, j, k, c;
+   byte *romData  = new byte[0x20000];
    size_t romSize = buffSize;
 
-   if(romType == 2) romSize -= 32;
+   if(romType == 2)
+      romSize -= 32;
 
    if(romType == 2)
    {
-      for(size_t i = 32, i2 = 0; i < romSize; i += 4, i2 += 4) 
-      {
-         for(int j = 3, k = 0; j >= 0; j--, k++)
+      for(i = 32, i2 = 0; i < romSize; i += 4, i2 += 4) 
+         for(j = 3, k = 0; j >= 0; j--, k++)
             romData[i2 + k] = d[i + j] & 0xFF;
-      }
    }
    else 
    {
-      for (size_t i = 0; i < romSize; i++)
+      for (i = 0; i < romSize; i++)
          romData[i] = d[i] & 0xFF;
    }
 
    //If VMS or DCI, create a bogus flash memory to contain it in.
    if(romType == 1 || romType == 2)
    {
-      IsRealFlash = false;
       int rootPtr = 255*512;
-      int FATPtr = 254*512;
-      int dirPtr = 253*512;
-      int sz = (romSize+511) >> 9;
-      int i = 0;
+      int FATPtr  = 254*512;
+      int dirPtr  = 253*512;
+      int sz      = (romSize+511) >> 9;
+      int i       = 0;
+
+      IsRealFlash = false;
 
       //FAT init
       for(; i < 256*2; i += 2)
       {
-         romData[FATPtr + i] = 0xFC;
+         romData[FATPtr + i]     = 0xFC;
          romData[FATPtr + i + 1] = 0xFF;
       }
 
       for(i = 0; i < sz; i++)
       {
-         romData[FATPtr + 2*i] = i+1;
+         romData[FATPtr + 2*i]     = i+1;
          romData[FATPtr + (2*i)+1] = 0;
       }
 
       if((--i) >= 0)
       {
-         romData[FATPtr + 2*i] = 0xFA;
+         romData[FATPtr + 2*i]     = 0xFA;
          romData[FATPtr + (2*i)+1] = 0xFF;
       }
-      romData[FATPtr + 254*2] = 0xFA;
-      romData[FATPtr + (254*2)+1] = 0xFF;
-      romData[FATPtr + 255*2] = 0xFA;
-      romData[FATPtr + (255*2)+1] = 0xFF;
+      romData[FATPtr + 254*2]      = 0xFA;
+      romData[FATPtr + (254*2)+1]  = 0xFF;
+      romData[FATPtr + 255*2]      = 0xFA;
+      romData[FATPtr + (255*2)+1]  = 0xFF;
 
       for(i = 253; i > 241; --i)
       {
-         romData[FATPtr + 2*i] = i-1;
+         romData[FATPtr + 2*i]     = i-1;
          romData[FATPtr + (2*i)+1] = 0;
       }
-      romData[FATPtr + 241*2] = 0xFA;
+      romData[FATPtr + 241*2]       = 0xFA;
       romData[FATPtr + (241*2) + 1] = 0xFA;
 
       //Dir init
@@ -132,7 +132,7 @@ void VE_VMS_FLASH::loadROM(byte *d, size_t buffSize, int romType, const char *fi
       for(i = 0; i < 8; i++)
          romData[rootPtr + 0x30 + i] = romData[dirPtr+0x10 + i];
 
-      romData[rootPtr+ 0x44] = 255;
+      romData[rootPtr+ 0x44]  = 255;
       romData[rootPtr + 0x46] = 254;
       romData[rootPtr + 0x48] = 1;
       romData[rootPtr + 0x4A] = 253;
@@ -140,37 +140,38 @@ void VE_VMS_FLASH::loadROM(byte *d, size_t buffSize, int romType, const char *fi
       romData[rootPtr + 0x50] = 200;
    }
 
-
    if(romType == 0) 
    {
       //Loading userData (200 blocks, blocks are ordered descending)
-      for (int i = 0, c = 0; i < 200; ++i) 
+      for (i = 0, c = 0; i < 200; ++i) 
       {
-         for (int j = 0; j < 512; j++) {
+         for (j = 0; j < 512; j++)
+         {
             userData[c] = romData[(i * 512) + j];
             c++;
          }
       }
 
       //Loading directory (13 blocks)
-      for (int i = 253, c = 0; i >= 241; --i) 
+      for (i = 253, c = 0; i >= 241; --i) 
       {
-         for (int j = 0; j < 512; j++) {
+         for (j = 0; j < 512; j++)
+         {
             directory[c] = romData[(i * 512) + j];
             c++;
          }
       }
 
       //Loading FAT and rootBlock
-      for (int j = 0; j < 512; j++)
+      for (j = 0; j < 512; j++)
          FAT[j] = romData[(0x1FC00) + j];  //0x1FC00 being 254 x 512
 
-      for (int j = 0; j < 512; j++)
+      for (j = 0; j < 512; j++)
          rootBlock[j] = romData[(0x1FE00) + j];  //0x1FE00 being 255 x 512
    }
 
    //We also need data as a whole
-   for(size_t j = 0; j < romSize; j++)
+   for(j = 0; j < romSize; j++)
       data[j] = romData[j];
 
    IsSaveEnabled = enableSave;
@@ -372,25 +373,29 @@ int VE_VMS_FLASH::countFiles()
 ///Get file info from directory depending on its index
 VE_VMS_FLASH_FILE VE_VMS_FLASH::getFileAt(int index)
 {
-	int pos = index * 32; //Each entry is 32-bits
-
+   int fileSize, fileHeader;
+   int i;
+	int pos            = index * 32; //Each entry is 32-bits
 	VMS_FILE_TYPE type = VE_VMS_FLASH_FILE::getType(directory[pos + 0]);
-	int startBlock = directory[pos + 1] | (directory[pos + 2] << 16);
-	byte *nameArray = new byte[12];
+	int startBlock     = directory[pos + 1] | (directory[pos + 2] << 16);
+	byte *nameArray    = new byte[12];
+	char *fileName     = (char *)malloc(12);
 	
-	for(int i = 0; i < 12; ++i)
+	for(i = 0; i < 12; ++i)
 	{
 		int c = directory[pos + 4 + i];
-		if((char)c == ' ') break;
+		if((char)c == ' ')
+         break;
 		nameArray[i] = (byte)c;
-		if(c == '\0') break;
+		if(c == '\0')
+         break;
 	}
 
-	char *fileName = (char *)malloc(12);
-	for(int i = 0; i < 12; i++, fileName[i] = nameArray[i]);  //Filenames in VMS are UTF-8 encoded
+   //Filenames in VMS are UTF-8 encoded
+	for(i = 0; i < 12; i++, fileName[i] = nameArray[i]);  
 
-	int fileSize = directory[pos + 0x18] | (directory[pos + 0x19] << 16);
-	int fileHeader = directory[pos + 0x1A] | (directory[pos + 0x1B] << 16);
+	fileSize   = directory[pos + 0x18] | (directory[pos + 0x19] << 16);
+	fileHeader = directory[pos + 0x1A] | (directory[pos + 0x1B] << 16);
 
 	VE_VMS_FLASH_FILE file(index, type, startBlock, fileName, fileSize, fileHeader);
 
@@ -398,28 +403,31 @@ VE_VMS_FLASH_FILE VE_VMS_FLASH::getFileAt(int index)
 }
 
 ///Get file info from directory depending on its name
-VE_VMS_FLASH_FILE VE_VMS_FLASH::getFile(const char *name){
-	VE_VMS_FLASH_FILE file;
-	int fileCount = countFiles();
+VE_VMS_FLASH_FILE VE_VMS_FLASH::getFile(const char *name)
+{
+   int i;
+   VE_VMS_FLASH_FILE file;
+   int fileCount = countFiles();
 
-	for(int i = 0; i < fileCount; ++i)
-	{
-		file = getFileAt(i);
+   for(i = 0; i < fileCount; ++i)
+   {
+      file = getFileAt(i);
 
-		if(strcmp(file.getFileName(), name))
-			break;
-	}
+      if(strcmp(file.getFileName(), name))
+         break;
+   }
 
-	return file;
+   return file;
 }
 
 ///Counts number of mini-games found in ROM
 int VE_VMS_FLASH::countGames()
 {
+   int i;
 	int fileCount = countFiles();
 	int gameCount = 0;
 
-	for(int i = 0; i < fileCount; i++)
+	for(i = 0; i < fileCount; i++)
 		if(getFileAt(i).getType() == GAME)
 			gameCount++;
 
@@ -440,18 +448,19 @@ size_t VE_VMS_FLASH::getFileData(VE_VMS_FLASH_FILE fileinfo, byte *out)
 	{   //e is for entry
 		byte FATEntry = FAT[i] | (FAT[i+1] << 16);   //Little-endian
 
-		if(FATEntry != 0xFFFC){
-			byte *block = new byte[512];
-			readBlock(e, block);    //Block is allocated to our file
+		if(FATEntry != 0xFFFC)
+      {
+         byte *block = new byte[512];
+         readBlock(e, block);    //Block is allocated to our file
 
-			//Write read block to 'data'
-			for(int j = 0; j < 512; ++j)
-				data[(w * 512) + j] = block[j];
+         //Write read block to 'data'
+         for(int j = 0; j < 512; ++j)
+            data[(w * 512) + j] = block[j];
 
-			++w;    //Indicates number of blocks written
+         ++w;    //Indicates number of blocks written
 
-			if(FATEntry == 0xFFFA) break;
-		}
+         if(FATEntry == 0xFFFA) break;
+      }
 	}
 
 	return blockCount * 512;

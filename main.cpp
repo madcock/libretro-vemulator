@@ -23,11 +23,11 @@
 
 /* Forward declarations */
 extern "C" {
-RFILE* rfopen(const char *path, const char *mode);
-int64_t rfseek(RFILE* stream, int64_t offset, int origin);
-int64_t rftell(RFILE* stream);
-int rfgetc(RFILE* stream);
-int rfclose(RFILE* stream);
+   RFILE* rfopen(const char *path, const char *mode);
+   int64_t rfseek(RFILE* stream, int64_t offset, int origin);
+   int64_t rftell(RFILE* stream);
+   int rfgetc(RFILE* stream);
+   int rfclose(RFILE* stream);
 }
 
 retro_environment_t environment_cb;
@@ -42,9 +42,9 @@ struct retro_variable options[2] = {
    { NULL, NULL }
 };
 
-VMU *vmu;
-uint16_t *frameBuffer;
-byte *romData;
+static VMU *vmu;
+static uint16_t *frameBuffer;
+static byte *romData;
 
 RETRO_API void retro_set_environment(retro_environment_t env)
 {
@@ -81,14 +81,18 @@ RETRO_API void retro_set_input_state(retro_input_state_t istate)
 RETRO_API void retro_init(void)
 {
 	frameBuffer = (uint16_t*)calloc(SCREEN_WIDTH*SCREEN_HEIGHT, sizeof(uint16_t));
-	vmu = new VMU(frameBuffer);
+	vmu         = new VMU(frameBuffer);
 }
 
 RETRO_API void retro_deinit(void)
 {
 	delete vmu;
-	if(frameBuffer != NULL) free(frameBuffer);
-	if(romData != NULL) free(romData);
+	if(frameBuffer)
+      free(frameBuffer);
+	if(romData)
+      free(romData);
+   frameBuffer = NULL;
+   romData     = NULL;
 }
 
 RETRO_API unsigned retro_api_version(void)
@@ -117,7 +121,8 @@ RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
 	info->timing.sample_rate    = SAMPLE_RATE;
 }
 
-RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
+RETRO_API void retro_set_controller_port_device(
+      unsigned port, unsigned device)
 {
 	
 }
