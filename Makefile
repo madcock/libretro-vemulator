@@ -3,6 +3,7 @@ STATIC_LINKING := 0
 CORE_DIR     := .
 
 CFLAGS       :=
+CXXFLAGS     :=
 
 # platform
 ifeq ($(platform),)
@@ -103,7 +104,7 @@ else ifeq ($(platform), tvos-arm64)
       IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
    endif
 
-   CFLAGS += -DIOS
+   CFLAGS   += -DIOS
    CXXFLAGS += -DIOS
 
    CC = cc -arch arm64 -isysroot $(IOSSDK)
@@ -122,8 +123,9 @@ else ifeq ($(platform), vita)
    CC ?= arm-vita-eabi-gcc
    CXX ?= arm-vita-eabi-g++
    AR ?= arm-vita-eabi-ar
-   CFLAGS += -Wl,-q -Wall -O3
-	STATIC_LINKING = 1
+   CFLAGS += -Wl,-q -Wall
+   CXXFLAGS += -Wl,-q -Wall
+   STATIC_LINKING = 1
 else
    CC ?= gcc
    CXX ?= g++
@@ -134,21 +136,23 @@ endif
 LDFLAGS += $(LIBM)
 
 ifeq ($(DEBUG), 1)
-   CFLAGS += -O0 -g
+   CXXFLAGS += -O0 -g
 else
-   CFLAGS += -O3
+   CXXFLAGS += -O3
 endif
 
 include Makefile.common
 
-OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o)
-CFLAGS += -Wall -pedantic $(fpic)
-CFLAGS  += $(INCFLAGS) $(INCFLAGS_PLATFORM)
+OBJECTS   := $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o)
+CFLAGS    += -Wall -pedantic $(fpic)
+CFLAGS    += $(INCFLAGS) $(INCFLAGS_PLATFORM)
+CXXFLAGS  += -Wall -pedantic $(fpic)
+CXXFLAGS  += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 
 ifneq (,$(findstring qnx,$(platform)))
-CFLAGS += -Wc,-std=c++98
+CXXFLAGS += -Wc,-std=c++98
 else
-CFLAGS += -std=c++98
+CXXFLAGS += -std=c++98
 endif
 
 OBJOUT   = -o 
@@ -177,7 +181,7 @@ else
 endif
 
 %.o: %.cpp
-	$(CXX) $(INCLUDES) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 %.o: %.c
 	$(CC) $(INCLUDES) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
