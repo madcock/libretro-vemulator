@@ -187,7 +187,7 @@ endif
 	$(CC) $(INCLUDES) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 clean:
-	rm -f *.so *.o
+	rm -f $(TARGET) $(OBJECTS)
 
 .PHONY: clean
 
