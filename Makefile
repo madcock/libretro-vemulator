@@ -148,7 +148,7 @@ CFLAGS  += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 ifneq (,$(findstring qnx,$(platform)))
 CFLAGS += -Wc,-std=c++98
 else
-CFLAGS += -std=gnu++98
+CFLAGS += -std=c++98
 endif
 
 OBJOUT   = -o 

@@ -8,7 +8,7 @@ include $(ROOT_DIR)/Makefile.common
 include $(CLEAR_VARS)
 LOCAL_MODULE    := retro
 LOCAL_SRC_FILES := $(SOURCES_C) $(SOURCES_CXX)
-LOCAL_CFLAGS    := -O3 -std=c++98 -ffast-math -funroll-loops -D__LIBRETRO__  $(INCFLAGS)
+LOCAL_CFLAGS    := -O3 -ffast-math -funroll-loops -D__LIBRETRO__  $(INCFLAGS)
 LOCAL_LDFLAGS   := -Wl,-version-script=$(CORE_DIR)/link.T
 
 ifeq ($(TARGET_ARCH),arm)
