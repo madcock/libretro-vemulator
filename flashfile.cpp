@@ -27,32 +27,35 @@ VE_VMS_FLASH_FILE::VE_VMS_FLASH_FILE()
 VE_VMS_FLASH_FILE::VE_VMS_FLASH_FILE(int index, VMS_FILE_TYPE t, int firstblock, char *name, int size, int header)
 { 
 	//fileNumber means directory entry
-	fileIndex = index;
-	type = t;
-	startBlock = firstblock;
-	fileName = name;
-	fileSize = size;
+	fileIndex   = index;
+	type        = t;
+	startBlock  = firstblock;
+	fileName    = name;
+	fileSize    = size;
 	headerBlock = header;
 }
 
 ///Copy constructor
 VE_VMS_FLASH_FILE::VE_VMS_FLASH_FILE(VE_VMS_FLASH_FILE &c)
 {
-	fileIndex = c.getFileIndex();
-	type = c.getType();
-	startBlock = c.getStartBlock();
-	fileName = c.getFileName();
-	fileSize = c.getFileSize();
+	fileIndex   = c.getFileIndex();
+	type        = c.getType();
+	startBlock  = c.getStartBlock();
+	fileName    = c.getFileName();
+	fileSize    = c.getFileSize();
 	headerBlock = c.getHeaderBlock();
 }
 
 VMS_FILE_TYPE VE_VMS_FLASH_FILE::getType(int d)
 {
 	d &= 0xFF;
-	if(d == 0x00) return NONE;
-	else if(d == 0x33) return DATA;
-	else if(d == 0xCC) return GAME;
-	else return UNKNOWN;
+	if (d == 0x00)
+      return NONE;
+	if (d == 0x33)
+      return DATA;
+	if (d == 0xCC)
+      return GAME;
+	return UNKNOWN;
 }
 
 //Setters and getters

@@ -20,7 +20,7 @@
 #define _AUDIO_H_
 
 #include <math.h>
-#include "libretro.h"
+#include <libretro.h>
 #include "common.h"
 #include "cpu.h"
 #include "ram.h"

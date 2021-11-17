@@ -32,13 +32,11 @@ VE_VMS_BASETIMER::~VE_VMS_BASETIMER()
 
 void VE_VMS_BASETIMER::runTimer() 
 {
-	int BTCR_data = ram->readByte_RAW(BTCR);
-
-	bool BTStarted = (BTCR_data & 64) != 0;
+	int int1cycle;
+	int BTCR_data    = ram->readByte_RAW(BTCR);
+	bool BTStarted   = (BTCR_data & 64) != 0;
 	bool Int0Enabled = (BTCR_data & 1) != 0;
 	bool Int1Enabled = (BTCR_data & 4) != 0;
-	int int1cycle;
-
 	int cycleControl = ((BTCR_data & 16) >> 4) | ((BTCR_data & 32) >> 4);
 
 	switch (cycleControl)

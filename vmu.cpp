@@ -15,121 +15,125 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include <streams/file_stream.h>
 
 #include "vmu.h"
 
+/* Forward declarations */
+extern "C" {
+RFILE* rfopen(const char *path, const char *mode);
+int64_t rfseek(RFILE* stream, int64_t offset, int origin);
+int64_t rftell(RFILE* stream);
+int rfgetc(RFILE* stream);
+int rfclose(RFILE* stream);
+}
+
 VMU::VMU(uint16_t *_frameBuffer)
 {
-	//Initialize system
-	ram = new VE_VMS_RAM();
-	rom = new VE_VMS_ROM();
-	flash = new VE_VMS_FLASH(ram);
-	intHandler = new VE_VMS_INTERRUPTS();
-	
-	cpu = new VE_VMS_CPU(ram, rom, flash, intHandler, true);
-	
-	audio = new VE_VMS_AUDIO(cpu, ram);
-	
-	t0 = new VE_VMS_TIMER0(ram, intHandler, cpu, &prescaler);
-	t1 = new VE_VMS_TIMER1(ram, intHandler, audio);
-	baseTimer = new VE_VMS_BASETIMER(ram, intHandler, cpu);
-	
-	video = new VE_VMS_VIDEO(ram);
-	frameBuffer = _frameBuffer;
-	
-	
-	//Initialize variables
-	ccount = 0;  //Cycle count
-    cycle_count = 0;
-    time_reg = 0;
-    frame_skip = 0;
-    CPS = 0; //Real cycles per second
-    prescaler = 0;
-    pcount = 0;
-    oldPRR = -1;
+   //Initialize system
+   ram          = new VE_VMS_RAM();
+   rom          = new VE_VMS_ROM();
+   flash        = new VE_VMS_FLASH(ram);
+   intHandler   = new VE_VMS_INTERRUPTS();
 
-    OSC = 0;
-    OCR_old = -1; //For performance, not to calculate clock each time, unless OCR is changed.
-    threadReady = false;
-    inSleepState = false;
-    BIOSExists = false;
-    enableSound = true;
-    useT1ELD = false; //Some mini-game programmers (Especially homebrew creators) don't use it
-    cycles_left = 0;
+   cpu          = new VE_VMS_CPU(ram, rom, flash, intHandler, true);
+   audio        = new VE_VMS_AUDIO(cpu, ram);
+   t0           = new VE_VMS_TIMER0(ram, intHandler, cpu, &prescaler);
+   t1           = new VE_VMS_TIMER1(ram, intHandler, audio);
+   baseTimer    = new VE_VMS_BASETIMER(ram, intHandler, cpu);
+   video        = new VE_VMS_VIDEO(ram);
+   frameBuffer  = _frameBuffer;
+
+
+   //Initialize variables
+   ccount       = 0;  //Cycle count
+   cycle_count  = 0;
+   time_reg     = 0;
+   frame_skip   = 0;
+   CPS          = 0; //Real cycles per second
+   prescaler    = 0;
+   pcount       = 0;
+   oldPRR       = -1;
+
+   OSC          = 0;
+   OCR_old      = -1; //For performance, not to calculate clock each time, unless OCR is changed.
+   threadReady  = false;
+   inSleepState = false;
+   BIOSExists   = false;
+   enableSound  = true;
+   useT1ELD     = false; //Some mini-game programmers (Especially homebrew creators) don't use it
+   cycles_left  = 0;
 }
 
 VMU::~VMU()
 {
-	delete t0;
-	delete t1;
-	delete baseTimer;
-	delete audio;
-	delete video;
-	delete flash;
-	delete cpu;
-	delete intHandler;
-	delete ram;
-	delete rom;
+   delete t0;
+   delete t1;
+   delete baseTimer;
+   delete audio;
+   delete video;
+   delete flash;
+   delete cpu;
+   delete intHandler;
+   delete ram;
+   delete rom;
 }
 
 int VMU::loadBIOS(const char *filePath)
 {
-	FILE *bios = fopen(filePath, "rb");
-	
-	if(bios == NULL) return -1;
-	
-	fseek(bios, 0, SEEK_END);
-	size_t fileSize = ftell(bios);
-	fseek(bios, 0, SEEK_SET);
+   size_t i, fileSize;
+   RFILE *bios = rfopen(filePath, "rb");
 
-	byte *BIOS_Data_Encrypted = new byte[0xF004];
-	byte *BIOS_Data = new byte[0xF000];
-	
-	if(fileSize > 0xF004) return -2; //Unknown BIOS image type
-	
-	
-	for(size_t i = 0; i < fileSize; ++i)
-		BIOS_Data_Encrypted[i] = fgetc(bios);
-		
-	fclose(bios);
+   if(!bios)
+      return -1;
 
+   rfseek(bios, 0, SEEK_END);
+   fileSize = rftell(bios);
+   rfseek(bios, 0, SEEK_SET);
 
-	//Decrypt BIOS file if encrypted (First opcode is not JMPF)
-	if(BIOS_Data_Encrypted[0] != 0x2A) 
-	{
-		//Remove first 4 bytes
-		for (int i = 0; i < 0xF000; ++i) 
-		{
-			BIOS_Data[i] = BIOS_Data_Encrypted[i + 4];
-		}
+   byte *BIOS_Data_Encrypted = new byte[0xF004];
+   byte *BIOS_Data = new byte[0xF000];
 
-		//XOR 0x37
-		for (int i = 0; i < 0xF000; ++i) 
-		{
-			BIOS_Data[i] = (byte) ((BIOS_Data[i] ^ 0x37) & 0xFF);
-		}
-	} 
-	else 
-	{
-		//BIOS is not encrypted
-		for(size_t i = 0; i < 0xF000; ++i)
-			BIOS_Data[i] = BIOS_Data_Encrypted[i];
-	}
+   if(fileSize > 0xF004)
+      return -2; //Unknown BIOS image type
 
-	//Check BIOS one last time (After decrypting)
-	if(BIOS_Data[0] != 0x2A)
-		return -1;
+   for(i = 0; i < fileSize; ++i)
+      BIOS_Data_Encrypted[i] = rfgetc(bios);
 
-	BIOSExists = true;
+   rfclose(bios);
 
-	//This is loaded in (64KB) of ROM
-	for(size_t i = 0; i < 0xF000; ++i)
-		rom->writeByte(i, BIOS_Data[i]);
-		
-	delete []BIOS_Data;
-	delete []BIOS_Data_Encrypted;
+   //Decrypt BIOS file if encrypted (First opcode is not JMPF)
+   if(BIOS_Data_Encrypted[0] != 0x2A) 
+   {
+      //Remove first 4 bytes
+      for (i = 0; i < 0xF000; ++i) 
+         BIOS_Data[i] = BIOS_Data_Encrypted[i + 4];
 
-	return 0;
+      //XOR 0x37
+      for (i = 0; i < 0xF000; ++i) 
+         BIOS_Data[i] = (byte) ((BIOS_Data[i] ^ 0x37) & 0xFF);
+   } 
+   else 
+   {
+      //BIOS is not encrypted
+      for(i = 0; i < 0xF000; ++i)
+         BIOS_Data[i] = BIOS_Data_Encrypted[i];
+   }
+
+   //Check BIOS one last time (After decrypting)
+   if(BIOS_Data[0] != 0x2A)
+      return -1;
+
+   BIOSExists = true;
+
+   //This is loaded in (64KB) of ROM
+   for(i = 0; i < 0xF000; ++i)
+      rom->writeByte(i, BIOS_Data[i]);
+
+   delete []BIOS_Data;
+   delete []BIOS_Data_Encrypted;
+
+   return 0;
 }
 
 void VMU::halt()
@@ -145,14 +149,14 @@ void VMU::setDate()
 	
 	struct tm *currentTime = localtime(&rawTime);
 	
-	byte day = currentTime->tm_mday & 0xFF;
+	byte day   = currentTime->tm_mday & 0xFF;
 	byte month = currentTime->tm_mon & 0xFF;
-	byte year = (currentTime->tm_year + 1900) & 0xFF;
+	byte year  = (currentTime->tm_year + 1900) & 0xFF;
 	byte yearH = (year & 0xFF00) >> 8;
 	byte yearL = year & 0xFF;
-	byte hour = currentTime->tm_hour & 0xFF;
-	byte min = currentTime->tm_min & 0xFF;
-	byte sec = currentTime->tm_sec & 0xFF;
+	byte hour  = currentTime->tm_hour & 0xFF;
+	byte min   = currentTime->tm_min & 0xFF;
+	byte sec   = currentTime->tm_sec & 0xFF;
 
 	//BCD time
 	ram->writeByte_RAW(0x10, int2BCD(year) & 0xFF);
@@ -184,14 +188,10 @@ void VMU::initBIOS()
 
 	//No buttons clicked
 	ram->writeByte_RAW(P3, 0xFF);
-
-
-	//ram->writeByte(0x6E, 0xFF);
 }
 
 void VMU::startCPU()
 {
-	//printf("Starting CPU\n");
 	if(!BIOSExists)
 	{
 		//Enable HLE
@@ -201,9 +201,6 @@ void VMU::startCPU()
 	} else initBIOS();
 
 	cpu->state = 1;
-
-	//if(enableSound)
-		//audioThread.start();
 }
 
 void VMU::initializeHLE()
@@ -237,23 +234,16 @@ void VMU::runCycle()
 		//double freq;
 		if (OSC == 0) 
 		{
-			//freq = 879.236 / freqDiv;
 			audio->setAudioFrequency(600000 / freqDiv);   //What the real frequency should be
 			cpu->setFrequency(600000 / freqDiv);
 		} 
 		else    //RC
 		{
-			//freq = 32.768 / freqDiv;
 			audio->setAudioFrequency(32768 / freqDiv);   //What the real frequency should be
 			cpu->setFrequency(32768 / freqDiv);
 		}
-		//double clock = (1.00 / freq) * 1000;    //In milliseconds
-		//cpu->clock = (int) clock;//(int) clock;
-
 	}
 	OCR_old = OCR_data;
-
-	//int cyclesUsed = 1;
 
 	//Set T1LC and T1HC when bit 4 of T1CNT is 1
 	byte T1CNT_data = ram->readByte_RAW(T1CNT);
@@ -315,49 +305,49 @@ void VMU::runCycle()
 
 void VMU::reset()
 {
-	delete t0;
-	delete t1;
-	delete baseTimer;
-	delete audio;
-	delete video;
-	delete flash;
-	delete cpu;
-	delete intHandler;
-	delete ram;
-	delete rom;
-	
-	//Re-initialize system
-	ram = new VE_VMS_RAM();
-	rom = new VE_VMS_ROM();
-	flash = new VE_VMS_FLASH(ram);
-	intHandler = new VE_VMS_INTERRUPTS();
-	
-	cpu = new VE_VMS_CPU(ram, rom, flash, intHandler, true);
-	
-	audio = new VE_VMS_AUDIO(cpu, ram);
-	
-	t0 = new VE_VMS_TIMER0(ram, intHandler, cpu, &prescaler);
-	t1 = new VE_VMS_TIMER1(ram, intHandler, audio);
-	baseTimer = new VE_VMS_BASETIMER(ram, intHandler, cpu);
-	
-	video = new VE_VMS_VIDEO(ram);
-	
-	//Re-nitialize variables
-	ccount = 0;  //Cycle count
-    cycle_count = 0;
-    time_reg = 0;
-    frame_skip = 0;
-    CPS = 0; //Real cycles per second
-    prescaler = 0;
-    pcount = 0;
-    oldPRR = -1;
+   delete t0;
+   delete t1;
+   delete baseTimer;
+   delete audio;
+   delete video;
+   delete flash;
+   delete cpu;
+   delete intHandler;
+   delete ram;
+   delete rom;
 
-    OSC = 0;
-    OCR_old = -1; //For performance, not to calculate clock each time, unless OCR is changed.
-    threadReady = false;
-    inSleepState = false;
-    BIOSExists = false;
-    enableSound = true;
-    useT1ELD = false; //Some mini-game programmers (Especially homebrew creators) don't use it
-    cycles_left = 0;
+   //Re-initialize system
+   ram          = new VE_VMS_RAM();
+   rom          = new VE_VMS_ROM();
+   flash        = new VE_VMS_FLASH(ram);
+   intHandler   = new VE_VMS_INTERRUPTS();
+
+   cpu          = new VE_VMS_CPU(ram, rom, flash, intHandler, true);
+
+   audio        = new VE_VMS_AUDIO(cpu, ram);
+
+   t0           = new VE_VMS_TIMER0(ram, intHandler, cpu, &prescaler);
+   t1           = new VE_VMS_TIMER1(ram, intHandler, audio);
+   baseTimer    = new VE_VMS_BASETIMER(ram, intHandler, cpu);
+
+   video        = new VE_VMS_VIDEO(ram);
+
+   //Re-nitialize variables
+   ccount       = 0;  //Cycle count
+   cycle_count  = 0;
+   time_reg     = 0;
+   frame_skip   = 0;
+   CPS          = 0; //Real cycles per second
+   prescaler    = 0;
+   pcount       = 0;
+   oldPRR       = -1;
+
+   OSC          = 0;
+   OCR_old      = -1; //For performance, not to calculate clock each time, unless OCR is changed.
+   threadReady  = false;
+   inSleepState = false;
+   BIOSExists   = false;
+   enableSound  = true;
+   useT1ELD     = false; //Some mini-game programmers (Especially homebrew creators) don't use it
+   cycles_left  = 0;
 }

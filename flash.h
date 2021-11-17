@@ -19,8 +19,9 @@
 #ifndef _FLASH_H_
 #define _FLASH_H_
 
-#include <stdio.h>
 #include <string.h>
+#include <streams/file_stream.h>
+
 #include "common.h"
 #include "flashfile.h"
 #include "ram.h"
@@ -96,7 +97,7 @@ private:
     byte *FAT;
     byte *rootBlock;
     byte *data;
-    FILE *flashWriter;
+    RFILE *flashWriter;
     bool IsRealFlash;
     bool IsSaveEnabled;
     

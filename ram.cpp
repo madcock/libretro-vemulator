@@ -20,17 +20,17 @@
 
 VE_VMS_RAM::VE_VMS_RAM()
 {
-	T1LC_Temp = 0;
-    T1HC_Temp = 0;
-    
-	data = new byte[1024];
-    wram = new byte[512];
-    xram0 = new byte[0x7C];
-    xram1 = new byte[0x7C];
-    xram2 = new byte[0x7C];
-    
-    T1RL_data = 0;
-    T1RH_data = 0;
+   T1LC_Temp = 0;
+   T1HC_Temp = 0;
+
+   data      = new byte[1024];
+   wram      = new byte[512];
+   xram0     = new byte[0x7C];
+   xram1     = new byte[0x7C];
+   xram2     = new byte[0x7C];
+
+   T1RL_data = 0;
+   T1RH_data = 0;
 }
 
 VE_VMS_RAM::~VE_VMS_RAM()
@@ -45,7 +45,6 @@ VE_VMS_RAM::~VE_VMS_RAM()
 //Setters and getters
 byte VE_VMS_RAM::readByte(size_t adr)
 {
-	//printf("Reading raw address %ul\n", adr);
 	size_t xaddress = adr + (data[STAD] & 0xFF);    //Remove start address of XRAM
 	size_t address = adr;
 
@@ -89,7 +88,6 @@ byte VE_VMS_RAM::readByte(size_t adr)
 			data[VRMAD1] = VRMAD & 0xFF;
 			data[VRMAD2] = (VRMAD >> 8) & 1;
 		}
-		//printf("Work ram buffer accessed! Read\n");
 
 		return (wram[VRMAD_original] & 0xFF);
 	}
@@ -127,7 +125,6 @@ byte VE_VMS_RAM::readByteXRAM(size_t adr, int bank)
 
 void VE_VMS_RAM::writeByte(size_t adr, byte b)
 {
-	//printf("Writing raw address %ul\n", adr);
 	size_t xaddress = adr + (data[STAD] & 0xFF);
 	size_t address = adr;
 
@@ -179,7 +176,6 @@ void VE_VMS_RAM::writeByte(size_t adr, byte b)
 			data[VRMAD1] = VRMAD & 0xFF;
 			data[VRMAD2] = (VRMAD >> 8) & 1;
 		}
-		//printf("Work ram buffer accessed! Write");
 
 		wram[VRMAD_original] = b & 0xFF;
 		return;
@@ -218,4 +214,3 @@ byte *VE_VMS_RAM::getData()
 {
 	return data;
 }
-

@@ -21,7 +21,6 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <stdio.h>
 
 #define FPS 60
 #define SAMPLE_RATE 32768

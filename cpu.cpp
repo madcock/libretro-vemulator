@@ -2141,6 +2141,4 @@ int VE_VMS_CPU::processInstruction(bool dbg)
 	++instructionCount;
 	
 	return cycles;
-
 }
-

@@ -42,14 +42,16 @@ void VE_VMS_ROM::writeByte(size_t address, byte b)
 //Memory operations
 void VE_VMS_ROM::loadData(byte *d, size_t buffSize, size_t size)
 {
+   size_t i;
 	if(buffSize < size) return;
-	for(size_t i = 0; i < size; i++)
+	for(i = 0; i < size; i++)
 		data[i] = d[i];
 }
 
 void VE_VMS_ROM::loadData(byte *d, size_t buffSize)
 {
-	for(size_t i = 0; i < buffSize; i++)
+   size_t i;
+	for(i = 0; i < buffSize; i++)
 		data[i] = d[i];
 }
 

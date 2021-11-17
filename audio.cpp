@@ -61,9 +61,8 @@ void VE_VMS_AUDIO::generateSignal(retro_audio_sample_t &audio_cb)
 	{
 		int16_t amplitude = 0x7FFF;
 		if(waveWidth != 0) 
-		{
-			if((i%waveWidth) < lowLevelWidth) amplitude = 0;
-		}
+			if((i%waveWidth) < lowLevelWidth)
+            amplitude = 0;
 		
 		audio_cb(amplitude, amplitude);
 	}
@@ -93,10 +92,11 @@ void VE_VMS_AUDIO::runAudioCheck()
 {
 	if(!IsEnabled) 
 	{
+      size_t i;
 		size_t count = SAMPLE_RATE * 2;
 		
 		//Empty signal (No sound)
-		for(size_t i = 0; i < count; i++)
+		for(i = 0; i < count; i++)
 			sampleArray[i] = 0;
 			
 		T1LR_old = -1;

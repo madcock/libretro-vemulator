@@ -143,6 +143,7 @@ include Makefile.common
 
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o)
 CFLAGS += -Wall -pedantic $(fpic)
+CFLAGS  += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 
 ifneq (,$(findstring qnx,$(platform)))
 CFLAGS += -Wc,-std=c++98

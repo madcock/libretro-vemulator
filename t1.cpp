@@ -20,12 +20,12 @@
 
 VE_VMS_TIMER1::VE_VMS_TIMER1(VE_VMS_RAM *_ram, VE_VMS_INTERRUPTS *_intHandler, VE_VMS_AUDIO *_audio)
 {
-	ram = _ram;
-	intHandler = _intHandler;
-	audio = _audio;
-	
-	TRLStarted = 0;
-    TRHStarted = 0;
+   ram        = _ram;
+   intHandler = _intHandler;
+   audio      = _audio;
+
+   TRLStarted = 0;
+   TRHStarted = 0;
 }
 
 VE_VMS_TIMER1::~VE_VMS_TIMER1()
@@ -34,15 +34,10 @@ VE_VMS_TIMER1::~VE_VMS_TIMER1()
 
 void VE_VMS_TIMER1::runTimer()
 {
-	int TCNT_data = ram->readByte_RAW(T1CNT); //Timer control register
-
-	bool TRLEnabled;
-	bool TRHEnabled;
-	bool TRLONGEnabled;
-
-	TRLEnabled = (TCNT_data & 64) != 0;
-	TRHEnabled = (TCNT_data & 128) != 0;
-	TRLONGEnabled = (TCNT_data & 32) != 0;
+	int TCNT_data      = ram->readByte_RAW(T1CNT); //Timer control register
+	bool TRLEnabled    = (TCNT_data & 64) != 0;
+	bool TRHEnabled    = (TCNT_data & 128) != 0;
+	bool TRLONGEnabled = (TCNT_data & 32) != 0;
 
 	//Increase timers
 	if(TRLEnabled) 
@@ -52,7 +47,6 @@ void VE_VMS_TIMER1::runTimer()
 			ram->T1RL_data = ram->readByte_RAW(T1LR);
 
 			audio->setT1(ram->T1RL_data);
-			//printf("Started T1RL\n");
 		}
 
 		ram->T1RL_data++;
@@ -132,8 +126,5 @@ void VE_VMS_TIMER1::runTimer()
 		ram->T1RH_data = ram->readByte_RAW(T1HR);
 	}
 
-
-	//ram->writeByte_RAW(ram->T1LR, ram->T1RL_data);
-	//ram->writeByte_RAW(ram->T1HR, ram->T1RH_data);
 	ram->writeByte_RAW(T1CNT, TCNT_data);
 }

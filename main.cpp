@@ -16,8 +16,19 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "libretro.h"
+#include <streams/file_stream.h>
+
+#include <libretro.h>
 #include "vmu.h"
+
+/* Forward declarations */
+extern "C" {
+RFILE* rfopen(const char *path, const char *mode);
+int64_t rfseek(RFILE* stream, int64_t offset, int origin);
+int64_t rftell(RFILE* stream);
+int rfgetc(RFILE* stream);
+int rfclose(RFILE* stream);
+}
 
 retro_environment_t environment_cb;
 retro_video_refresh_t video_cb;
@@ -87,23 +98,23 @@ RETRO_API unsigned retro_api_version(void)
 
 RETRO_API void retro_get_system_info(struct retro_system_info *info)
 {
-	info->library_name = "VeMUlator";
-	info->library_version = "0.1";
+	info->library_name     = "VeMUlator";
+	info->library_version  = "0.1";
 	info->valid_extensions = "vms|bin|dci";
-	info->need_fullpath = true;
-	info->block_extract = false;
+	info->need_fullpath    = true;
+	info->block_extract    = false;
 }
 
 RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
 {
-	info->geometry.base_width = SCREEN_WIDTH;
-	info->geometry.base_height = SCREEN_HEIGHT;
-	info->geometry.max_width = SCREEN_WIDTH;
-	info->geometry.max_height = SCREEN_HEIGHT;
+	info->geometry.base_width   = SCREEN_WIDTH;
+	info->geometry.base_height  = SCREEN_HEIGHT;
+	info->geometry.max_width    = SCREEN_WIDTH;
+	info->geometry.max_height   = SCREEN_HEIGHT;
 	info->geometry.aspect_ratio = 0;
 	
-	info->timing.fps = FPS;
-	info->timing.sample_rate = SAMPLE_RATE;
+	info->timing.fps            = FPS;
+	info->timing.sample_rate    = SAMPLE_RATE;
 }
 
 RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
@@ -113,15 +124,16 @@ RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
  
 void processInput()
 {
+   byte P3_reg, P3_int;
+   int pressFlag = 0;
+
    input_poll_cb();
 
    if(!vmu->cpu->P3_taken)
       return;	//Don't accept new input until previous is processed
 
-   byte P3_reg = vmu->ram->readByte_RAW(P3);
-   int pressFlag = 0;
-   byte P3_int = vmu->ram->readByte_RAW(P3INT);
-
+   P3_reg = vmu->ram->readByte_RAW(P3);
+   P3_int = vmu->ram->readByte_RAW(P3INT);
    P3_reg = ~P3_reg;	//Active low
 
    //Up
@@ -232,50 +244,51 @@ RETRO_API void retro_cheat_set(unsigned index, bool enabled, const char *code)
 
 RETRO_API bool retro_load_game(const struct retro_game_info *game)
 {
-   size_t i;
-	//Set environment variables
-	enum retro_pixel_format format = RETRO_PIXEL_FORMAT_RGB565;
-	environment_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &format);
-	
-	//Opening file
-	FILE *rom = fopen(game->path, "rb");
-	if(rom == NULL) return false;
-	fseek(rom, 0, SEEK_END);
-	size_t romSize = ftell(rom);
-	fseek(rom, 0 , SEEK_SET);
+   size_t i, romSize;
+   //Set environment variables
+   enum retro_pixel_format format = RETRO_PIXEL_FORMAT_RGB565;
+   environment_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &format);
 
-	romData = (byte *)malloc(romSize);
-	for(i = 0; i < romSize; i++)
-		romData[i] = fgetc(rom);
-	
-	fclose(rom);
-	
-	//Check extension
-	char *path = (char *)malloc(strlen(game->path) + 1);
-	strcpy(path, game->path);
-	char *ext = strchr(path, '.');
-	
-	//Check needed variables
-	struct retro_variable var = {0};
-	var.key = "enable_flash_write";
-	environment_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
-	
-	//Loading ROM
-	if(!strcmp(ext, ".bin") || !strcmp(ext, ".BIN")) 
-	{
-		//Check if user wants core to be able to write to flash
-		if(!strcmp(var.value, "enabled")) vmu->flash->loadROM(romData, romSize, 0, game->path, true);
-		else vmu->flash->loadROM(romData, romSize, 0, game->path, false);
-	}
-	else if(!strcmp(ext, ".vms") || !strcmp(ext, ".VMS")) vmu->flash->loadROM(romData, romSize, 1, game->path, false);
-	else if(!strcmp(ext, ".dci") || !strcmp(ext, ".DCI")) vmu->flash->loadROM(romData, romSize, 2, game->path, false);
-	
-	free(path);
-	
-	//Initializing system
-	vmu->startCPU();
-	
-	return true;
+   //Opening file
+   RFILE *rom = rfopen(game->path, "rb");
+   if(!rom)
+      return false;
+   rfseek(rom, 0, SEEK_END);
+   romSize = rftell(rom);
+   rfseek(rom, 0 , SEEK_SET);
+
+   romData = (byte *)malloc(romSize);
+   for(i = 0; i < romSize; i++)
+      romData[i] = rfgetc(rom);
+
+   rfclose(rom);
+
+   //Check extension
+   char *path = (char *)malloc(strlen(game->path) + 1);
+   strcpy(path, game->path);
+   char *ext = strchr(path, '.');
+
+   //Check needed variables
+   struct retro_variable var = {0};
+   var.key = "enable_flash_write";
+   environment_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var);
+
+   //Loading ROM
+   if(!strcmp(ext, ".bin") || !strcmp(ext, ".BIN")) 
+   {
+      //Check if user wants core to be able to write to flash
+      if(!strcmp(var.value, "enabled")) vmu->flash->loadROM(romData, romSize, 0, game->path, true);
+      else vmu->flash->loadROM(romData, romSize, 0, game->path, false);
+   }
+   else if(!strcmp(ext, ".vms") || !strcmp(ext, ".VMS")) vmu->flash->loadROM(romData, romSize, 1, game->path, false);
+   else if(!strcmp(ext, ".dci") || !strcmp(ext, ".DCI")) vmu->flash->loadROM(romData, romSize, 2, game->path, false);
+
+   free(path);
+
+   //Initializing system
+   vmu->startCPU();
+
+   return true;
 }
 
 RETRO_API bool retro_load_game_special(unsigned game_type, const struct retro_game_info *info, size_t num_info)

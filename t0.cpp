@@ -20,16 +20,16 @@
 
 VE_VMS_TIMER0::VE_VMS_TIMER0(VE_VMS_RAM *_ram, VE_VMS_INTERRUPTS *_intHandler, VE_VMS_CPU *_cpu, byte *_prescaler)
 {
-	ram = _ram;
-	intHandler = _intHandler;
-	cpu = _cpu;
-	prescaler = _prescaler;
-	
-	TRLStarted = 0;
-    TRHStarted = 0;
-    
-    TRL_data = 0;
-    TRH_data = 0;
+   ram        = _ram;
+   intHandler = _intHandler;
+   cpu        = _cpu;
+   prescaler  = _prescaler;
+
+   TRLStarted = 0;
+   TRHStarted = 0;
+
+   TRL_data   = 0;
+   TRH_data   = 0;
 }
 
 VE_VMS_TIMER0::~VE_VMS_TIMER0()
@@ -39,29 +39,18 @@ VE_VMS_TIMER0::~VE_VMS_TIMER0()
 
 void VE_VMS_TIMER0::runTimer() 
 {
-	int TCNT_data = ram->readByte_RAW(T0CNT); //Timer control register
-
-	bool TRLEnabled;
-	bool TRHEnabled;
-	bool TRLONGEnabled;
-
-	TRLEnabled = (TCNT_data & 64) != 0;
-	TRHEnabled = (TCNT_data & 128) != 0;
-	TRLONGEnabled = (TCNT_data & 32) != 0;
+	int TCNT_data      = ram->readByte_RAW(T0CNT); //Timer control register
+	bool TRLEnabled    = (TCNT_data & 64) != 0;
+	bool TRHEnabled    = (TCNT_data & 128) != 0;
+	bool TRLONGEnabled = (TCNT_data & 32) != 0;
 	
-	//int clockSource = ((TCNT_data & 16) >> 4) & 0xFF;
-
-	//if(clockSource == 1) return;    //External pin, not supported
-
 	//Increase timers
 	if(TRLEnabled) 
 	{
 		if(TRLStarted++ == 0) 
-		{
 			TRL_data = ram->readByte_RAW(T0LR);
-			//printf("Started T0RL\n");
-		}
-		else if(*prescaler == 1) TRL_data++;
+		else if(*prescaler == 1)
+         TRL_data++;
 	} 
 	else 
 	{
@@ -72,10 +61,7 @@ void VE_VMS_TIMER0::runTimer()
 	if(TRHEnabled) 
 	{
 		if(TRHStarted++ == 0) 
-		{
 			TRH_data = ram->readByte_RAW(T0HR);
-			//printf("Started T0RH\n");
-		}
 		else if(!TRLONGEnabled)
 		{
 			if(*prescaler == 1)
@@ -89,8 +75,6 @@ void VE_VMS_TIMER0::runTimer()
 		TRHStarted = 0;
 	}
 	
-	//if(TRLONGEnabled) printf("Long mode.\n");
-
 	//Overflow in TRL_data, 8-bit mode
 	if(TRL_data > 255 && !TRLONGEnabled)
 	{
@@ -119,7 +103,6 @@ void VE_VMS_TIMER0::runTimer()
 	//Overflow in TRH_data, 8-bit mode
 	if(TRH_data > 255 && !TRLONGEnabled)
 	{
-		//printf("T0RH overflow 8-bit\n");
 		TCNT_data |= 8;
 
 		if (TCNT_data & 4) intHandler->setT0HOV();
@@ -153,4 +136,3 @@ void VE_VMS_TIMER0::runTimer()
 	
 	ram->writeByte_RAW(T0CNT, TCNT_data);
 }
-    
