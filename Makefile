@@ -126,6 +126,15 @@ else ifeq ($(platform), vita)
    CFLAGS += -Wl,-q -Wall
    CXXFLAGS += -Wl,-q -Wall
    STATIC_LINKING = 1
+else ifeq ($(platform), miyoo)
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC
+   SHARED := -shared -Wl,--version-script=link.T  -Wl,--no-undefined
+   CC = /opt/miyoo/usr/bin/arm-linux-gcc
+   CXX = /opt/miyoo/usr/bin/arm-linux-g++
+   AR = /opt/miyoo/usr/bin/arm-linux-ar
+   PLATFORM_DEFINES += -D_GNU_SOURCE
+   CFLAGS += -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s
 else
    CC ?= gcc
    CXX ?= g++
