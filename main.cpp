@@ -118,7 +118,22 @@ RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
 	info->geometry.aspect_ratio = 0;
 	
 	info->timing.fps            = FPS;
+	
+#if !defined(SF2000)
 	info->timing.sample_rate    = SAMPLE_RATE;
+#else
+	/* NOTE: The sample rate is assumed to be 31440 by default.
+			Relevant code is in:
+            
+			vemulator-libretro\common.h, line 26
+			
+				#define SAMPLE_RATE 32768
+			
+		SF2000 can only handle 11025, 22050, and 44100.
+	*/
+	info->timing.sample_rate    = 11025;
+#endif
+
 }
 
 RETRO_API void retro_set_controller_port_device(
