@@ -30,6 +30,10 @@ extern "C" {
    int rfclose(RFILE* stream);
 }
 
+static void dummy_log( enum retro_log_level level, const char* fmt, ... ) { }
+retro_log_printf_t log_cb = dummy_log;
+retro_environment_t env_cb;
+
 retro_environment_t environment_cb;
 retro_video_refresh_t video_cb;
 retro_audio_sample_t audio_cb;
@@ -80,8 +84,14 @@ RETRO_API void retro_set_input_state(retro_input_state_t istate)
 
 RETRO_API void retro_init(void)
 {
+	struct retro_log_callback log;
+
+	if ( env_cb( RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log ) )
+		log_cb = log.log;
+
 	frameBuffer = (uint16_t*)calloc(SCREEN_WIDTH*SCREEN_HEIGHT, sizeof(uint16_t));
 	vmu         = new VMU(frameBuffer);
+	log_cb( RETRO_LOG_INFO, "retro_init() exiting\n");
 }
 
 RETRO_API void retro_deinit(void)
@@ -93,6 +103,7 @@ RETRO_API void retro_deinit(void)
       free(romData);
    frameBuffer = NULL;
    romData     = NULL;
+   log_cb( RETRO_LOG_INFO, "retro_deinit() exiting\n");
 }
 
 RETRO_API unsigned retro_api_version(void)
@@ -107,6 +118,7 @@ RETRO_API void retro_get_system_info(struct retro_system_info *info)
 	info->valid_extensions = "vms|bin|dci";
 	info->need_fullpath    = true;
 	info->block_extract    = false;
+	log_cb( RETRO_LOG_INFO, "retro_get_system_info() exiting\n");
 }
 
 RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
@@ -131,9 +143,9 @@ RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
 			
 		SF2000 can only handle 11025, 22050, and 44100.
 	*/
-	info->timing.sample_rate    = 11025;
+	info->timing.sample_rate    = 22050;
 #endif
-
+log_cb( RETRO_LOG_INFO, "retro_get_system_av_info() exiting\n");
 }
 
 RETRO_API void retro_set_controller_port_device(
@@ -233,23 +245,27 @@ RETRO_API void retro_reset(void)
 
 RETRO_API void retro_run(void)
 {
+	log_cb( RETRO_LOG_INFO, "retro_run()\n");
    unsigned i;
    unsigned int cyclesPassed;
+	log_cb( RETRO_LOG_INFO, "retro_run() 1\n");
 	processInput();
-	
+	log_cb( RETRO_LOG_INFO, "retro_run() 2\n");
 	//Cycles passed since last screen refresh
 	cyclesPassed = vmu->cpu->getCurrentFrequency() / FPS;
-	
+	log_cb( RETRO_LOG_INFO, "retro_run() 3\n");
 	for(i = 0; i < cyclesPassed; i++)
 		vmu->runCycle();
-
+log_cb( RETRO_LOG_INFO, "retro_run()\n 4");
 	//Video
 	vmu->video->drawFrame(frameBuffer);
+	log_cb( RETRO_LOG_INFO, "retro_run()\n 5");
 	if(vmu->ram->readByte_RAW(MCR) & 8)
       video_cb(frameBuffer, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH * 2);
-	
+	log_cb( RETRO_LOG_INFO, "retro_run()\n 6");
 	//Audio
 	vmu->audio->generateSignal(audio_cb);
+	log_cb( RETRO_LOG_INFO, "retro_run() exiting\n");
 }
 
 RETRO_API size_t retro_serialize_size(void) { return 0; }

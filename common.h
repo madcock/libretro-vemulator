@@ -23,7 +23,11 @@
 #include <inttypes.h>
 
 #define FPS 60
+#if !defined(SF2000)
 #define SAMPLE_RATE 32768
+#else
+#define SAMPLE_RATE 22050	
+#endif
 #define SCREEN_WIDTH 48
 #define SCREEN_HEIGHT 32
 
